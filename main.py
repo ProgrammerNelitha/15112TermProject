@@ -1,4 +1,5 @@
 from cmu_graphics import *
+import copy
 #-------------------------------------------------------------------------------
 def drawBoard(app):
     for row in range(app.rows):
@@ -42,10 +43,53 @@ def findSelectedCell(app,mx,my):
             if x-w<=mx<=x+w and y-h<=my<=y+h:
                 return (row,col)
     return (None,None)
+#-------------------------------------------------------------------------------
+#Backtraking
+def sudokuSolver(app):
+    board=copy.deepcopy(app.board)
+    rows,cols=len(board),len(board[0])
+    for i in range(rows):
+        for j in range(cols):
+            if board[i][j]==None:
+                return f(board,i,j)
 
+def f(board,x,y):
+    if boardFinished(board) and isLegalSudoku(board):
+        return board
+    else:
+        for val in range(9):
+            oldVal=board[x][y]
+            board[x][y]=val
+            if isLegalSudoku(board):
+                if boardFinished(board): return board
+                #update new spot
+                a,b=newIndex(board,x,y)
+                newBoard=f(board,a,b)
+                if newBoard!=None:
+                    return newBoard
+            board[x][y]=oldVal
+        return None
+
+def boardFinished(board):
+    rows,cols=len(board),len(board[0])
+    for i in range(rows):
+        for j in range(cols):
+            if board[i][j]==None:
+                return False
+    return True
+
+def newIndex(board,x,y):
+    rows,cols=len(board),len(board[0])
+    for i in range(x,rows):
+        for j in range(cols):
+            if (i==x and j>y) or i>x:
+                if board[i][j]==None:
+                    return (i,j)
+
+def isLegalSudoku(board):
+    pass
 
 #-------------------------------------------------------------------------------
-
 def onAppStart(app):
     #Initiailze board
     app.rows = 9
@@ -58,6 +102,7 @@ def onAppStart(app):
     app.cellBorderWidth = 2
     app.selectedCellX=None
     app.selectedCellY=None
+    app.solvedBoard=sudokuSolver(app)
 
 def onMousePress(app,mouseX,mouseY):
     print(mouseX,mouseY)
