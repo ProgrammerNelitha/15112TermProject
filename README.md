@@ -1,2 +1,2 @@
 # 15112TermProject
-Sudoko!
+Sudoku!
