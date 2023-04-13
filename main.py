@@ -1,6 +1,9 @@
 from cmu_graphics import *
 import copy
+import os
+import random
 #-------------------------------------------------------------------------------
+#Code slightly modified from the Tetris Case Study Step 1
 def drawBoard(app):
     for row in range(app.rows):
         for col in range(app.cols):
@@ -44,6 +47,8 @@ def findSelectedCell(app,mx,my):
                 return (row,col)
     return (None,None)
 #-------------------------------------------------------------------------------
+#Backtracking code modified from the Mini-Sudoku solver
+'''
 #Backtraking
 def sudokuSolver(app):
     board=copy.deepcopy(app.board)
@@ -87,14 +92,71 @@ def newIndex(board,x,y):
                     return (i,j)
 
 def isLegalSudoku(board):
-    pass
+    rows,cols=len(board),len(board[0])
+    #Check each row 
+    for rowList in board:
+        if not isLegal(rowList): return False
+    #Check Columns
+    for colNum in range(cols):
+        colList=[]
+        #loop through rows to get column elements
+        for row in board:
+            colList.append(row[colNum])
+        if not isLegal(colList): return False
+    #Check 3x3 blocks
+    
+    return True
+'''
+#-------------------------------------------------------------------------------
+#Board loading from Sudoku hints
+def loadBoardPaths(filters):
+        boardPaths = [ ]
+        for filename in os.listdir(f'C:\\Users\\1234l\\Documents\\Documents\\CMU\\15112\\term project\\tp-starter-files\\tp-starter-files\\boards'):
+            if filename.endswith('.txt'):
+                if hasFilters(filename, filters):
+                    boardPaths.append(f'boards/{filename}')
+        return boardPaths
+
+def hasFilters(filename, filters=None):
+    if filters == None: return True
+    for filter in filters:
+        if filter not in filename:
+            return False
+    return True
 
 #-------------------------------------------------------------------------------
+#Splash Screen
 def onAppStart(app):
+    app.board=None
+
+def splash_onKeyPress(app, key):
+    if key == 'h': setActiveScreen('help')
+    elif key=='enter': 
+        app.board = random.choice(loadBoardPaths('easy'))
+        setActiveScreen('game')
+
+def splash_onMousePress(app,mouseX,mouseY):
+    setActiveScreen('game')
+
+def splash_redrawAll(app):
+    drawLabel('insert splash screen, press h for instructions, and enter/click to play',app.width/2,app.height/2)
+#-------------------------------------------------------------------------------
+#Help Screen
+def help_onKeyPress(app, key):
+    if key == 'enter': setActiveScreen('splash')
+
+def help_onMousePress(app,mouseX,mouseY):
+    setActiveScreen('splash')
+
+def help_redrawAll(app):
+    drawLabel('instructions. press enter/click to return to splash screen',app.width/2,app.height/2)
+#-------------------------------------------------------------------------------
+#Game Screen
+def game_onAppStart(app):
     #Initiailze board
     app.rows = 9
     app.cols = 9
-    app.board = [([None] * app.cols) for row in range(app.rows)]
+    #app.board = [([None] * app.cols) for row in range(app.rows)]
     app.boardLeft = 75
     app.boardTop = 130
     app.boardWidth = 550
@@ -102,18 +164,18 @@ def onAppStart(app):
     app.cellBorderWidth = 2
     app.selectedCellX=None
     app.selectedCellY=None
-    app.solvedBoard=sudokuSolver(app)
+    # app.solvedBoard=sudokuSolver(app)
 
-def onMousePress(app,mouseX,mouseY):
+def game_onMousePress(app,mouseX,mouseY):
     print(mouseX,mouseY)
     app.selectedCellX,app.selectedCellY=findSelectedCell(app,mouseX,mouseY) 
 
-def onKeyPress(app,key):
+def game_onKeyPress(app,key):
     if app.selectedCellX!=None:
         if key.isdigit():
             app.board[app.selectedCellX][app.selectedCellY]=int(key)
 
-def redrawAll(app):
+def game_redrawAll(app):
     drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
     drawBoard(app)
     drawBoardBorder(app)
@@ -125,5 +187,5 @@ def redrawAll(app):
                 numX, numY = getCellLeftTop(app, row,col)
                 w, h = getCellSize(app)
                 drawLabel(app.board[row][col],numX+w/2,numY+h/2,size=25)
-
-runApp(width=1000,height=700)
+#-------------------------------------------------------------------------------
+runAppWithScreens(initialScreen='splash',width=1000,height=700)
