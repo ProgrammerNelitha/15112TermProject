@@ -2,6 +2,11 @@ from cmu_graphics import *
 import copy
 import os
 import random
+
+#Integrate difficuluties, backspace to delete entries (non-banned), check box for legals, ability to show legals for just one box, 
+#display stuff for game over
+#Later: ability to manually enter legals
+
 #-------------------------------------------------------------------------------
 #Code slightly modified from the Tetris Case Study Step 1
 def drawBoard(app):
@@ -140,6 +145,31 @@ def isLegalSudoku(board):
     
     return True
 '''
+def finishedSudoku(board):
+    rows,cols=len(board),len(board[0])
+    for row in range(rows):
+        #Check each row
+        if not checkSudoku(board[row]): return False
+
+        for colNum in range(cols):
+            #Check Columns
+            colList=[]
+            #loop through rows to get column elements
+            for rowList in board:
+                colList.append(rowList[colNum])
+            if not checkSudoku(colList): return False
+
+            #Check 3x3 blocks
+            square=getSquareRegion(board,row,colNum)
+            if not checkSudoku(square): return False
+    return True
+
+def checkSudoku(list):
+    for num in range(1,10):
+        if list.count(num)!=1: return False
+    return True
+
+
 #-------------------------------------------------------------------------------
 #Board loading from Sudoku hints
 def getBoard(difficulty):
@@ -182,6 +212,7 @@ def splash_onKeyPress(app, key):
         setActiveScreen('game')
 
 def splash_onMousePress(app,mouseX,mouseY):
+    print(mouseX,mouseY)
     setActiveScreen('game')
 
 def splash_redrawAll(app):
@@ -203,7 +234,7 @@ def game_onAppStart(app):
     app.rows = 9
     app.cols = 9
     
-    app.board=getBoard('easy')
+    app.board=getBoard('medium')
     app.banned=[]
     app.legals=[]
     for row in range(app.rows):
@@ -223,7 +254,7 @@ def game_onAppStart(app):
     app.selectedCellX=None
     app.selectedCellY=None
 
-    app.showLegals=False
+    app.showLegals=True
     # app.solvedBoard=sudokuSolver(app)
 
 def game_onMousePress(app,mouseX,mouseY):
@@ -250,15 +281,42 @@ def game_redrawAll(app):
                 drawLabel(app.board[row][col],numX+w/2,numY+h/2,size=25)
                 if (row,col) in app.banned:
                     drawRect(numX,numY,w,h,fill=rgb(135,62,133),opacity=25)
-                else:
-                    for legalVal in getLegals(app.board,row,col):
-                        drawLegal(legalVal,row,col)
+            elif app.showLegals==True and (row,col) not in app.banned:
+                for legalVal in getLegals(app.board,row,col):
+                    drawLegal(app,legalVal,row,col)
+    if finishedSudoku(app.board):
+        print('yay')
 
-def drawLegal(legalVal,row,col):
+def drawLegal(app,legalVal,row,col):
     numX, numY = getCellLeftTop(app, row,col)
+    #75,130 is top left corner
     if int(legalVal)==1:
-        x=numX+5
-        y=numY+5
-    drawLabel(legalVal,x,y,size=10)
+        x=numX+10
+        y=numY+10
+    elif int(legalVal)==2:
+        x=numX+30
+        y=numY+10
+    elif int(legalVal)==3:
+        x=numX+50
+        y=numY+10
+    elif int(legalVal)==4:
+        x=numX+10
+        y=numY+30
+    elif int(legalVal)==5:
+        x=numX+30
+        y=numY+30
+    elif int(legalVal)==6:
+        x=numX+50
+        y=numY+30
+    elif int(legalVal)==7:
+        x=numX+10
+        y=numY+50
+    elif int(legalVal)==8:
+        x=numX+30
+        y=numY+50
+    elif int(legalVal)==9:
+        x=numX+50
+        y=numY+50
+    drawLabel(legalVal,x,y,size=15)
 #-------------------------------------------------------------------------------
 runAppWithScreens(initialScreen='splash',width=1000,height=700)
