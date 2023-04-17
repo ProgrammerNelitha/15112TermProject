@@ -2,6 +2,7 @@ from cmu_graphics import *
 import copy
 import os
 import random
+import time
 
 #Integrate difficuluties, backspace to delete entries (non-banned), check box for legals, ability to show legals for just one box, 
 #display stuff for game over
@@ -89,7 +90,6 @@ def getLegals(board,row,col):
 #Board loading from Sudoku hints
 def getBoard(difficulty):
     path = random.choice(loadBoardPaths(difficulty))
-    print('path:',path)
     file = readFile(f"C:\\Users\\1234l\\Documents\\Documents\\CMU\\15112\\term project\\tp-starter-files\\tp-starter-files\\{path}")
     file = file.splitlines()
     board=[]
@@ -120,40 +120,10 @@ def hasFilters(filename, filters=None):
             return False
     return True
 
-#-------------------------------------------------------------------------------
-#Splash Screen
-def onAppStart(app):
-    app.difficulty=None
 
-def splash_onKeyPress(app, key):
-    if key == 'h': setActiveScreen('help')
-    if key=='1': app.difficulty='easy'
-    if key=='2': app.difficulty='medium'
-    if key=='3': app.difficulty='hard'
-    if key=='4': app.difficulty='expert'
-    if key=='5': app.difficulty='evil'
-    elif key=='enter': 
-        if app.difficulty!=None: setActiveScreen('game')
-
-def splash_onMousePress(app,mouseX,mouseY):
-    print(mouseX,mouseY)
-    if app.difficulty!=None: setActiveScreen('game')
-
-def splash_redrawAll(app):
-    drawLabel('insert splash screen, press h for instructions, and enter/click to play',app.width/2,app.height/2)
-    drawLabel(f'Chosen difficulty is: {app.difficulty}',app.width/2,app.height/2 + 100)
-#-------------------------------------------------------------------------------
-#Help Screen
-def help_onKeyPress(app, key):
-    if key == 'enter': setActiveScreen('splash')
-
-def help_onMousePress(app,mouseX,mouseY):
-    setActiveScreen('splash')
-
-def help_redrawAll(app):
-    drawLabel('instructions. press enter/click to return to splash screen',app.width/2,app.height/2)
 #-------------------------------------------------------------------------------
 #Backtracking code modified from the Mini-Sudoku solver
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 def getFewestLegals(board,legals):
     rows,cols=len(board),len(board[0])
 
@@ -185,9 +155,9 @@ def f(legals,board,x,y):
             oldVal=board[x][y]
             board[x][y]=val
             legals=resetLegals(board)
-            #print(f'attempt {x,y,val}',board)
+            print(f'attempt {x,y,val}',board)
             if isLegalSudoku(board):
-                #print('is legal')
+                print('is legal')
                 if finishedSudoku(board): 
                     return board
                 #update new spot
@@ -225,6 +195,33 @@ def BTcheckSudoku(list):
     for num in range(1,10):
         if list.count(num)>1: return False
     return True
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+#Test Backtracker
+# def testBacktracker(filters):
+#     time0 = time.time()
+#     boardPaths = sorted(loadBoardPaths(filters))
+#     failedPaths = [ ]
+#     for boardPath in boardPaths:
+#         board = getBoard(boardPath)
+#         print(boardPath)
+#         solution = sudokuSolver(board, verbose=False)
+#         if not solution:
+#             failedPaths.append(boardPath)
+#     print()
+#     totalCount = len(boardPaths)
+#     failedCount = len(failedPaths)
+#     okCount = totalCount - failedCount
+#     time1 = time.time()
+#     if len(failedPaths) > 0:
+#         print('Failed boards:')
+#         for path in failedPaths:
+#             print(f'    {path}')
+#     percent = round(100 * okCount/totalCount)
+#     print(f'Success rate: {okCount}/{totalCount} = {percent}%')
+#     print(f'Total time: {round(time1-time0, 1)} seconds')
+
+# testBacktracker(filters=['easy'])
 #-------------------------------------------------------------------------------
 #Stuff needed for game
 def finishedSudoku(board):
@@ -262,12 +259,12 @@ def resetLegals(board):
     return legals
 #-------------------------------------------------------------------------------
 #Game Screen
-def game_onScreenActivate(app):
+def game_onAppStart(app):
     #Initiailze board
     app.rows = 9
     app.cols = 9
     
-    app.board=getBoard(app.difficulty)
+    app.board=getBoard('easy')
     print('starting board:',app.board)
     app.banned=[]
     app.legals=dict()
@@ -280,7 +277,9 @@ def game_onScreenActivate(app):
                 legalSet=getLegals(app.board,row,col)
                 app.legals[(row,col)]=legalSet
     app.solution = sudokuSolver(app,app.board)
-    app.wrongCells = []
+
+    assert(finishedSudoku(app.solution))
+    print('assert pased')
 
     app.boardLeft = 75
     app.boardTop = 130
@@ -301,15 +300,10 @@ def game_onMousePress(app,mouseX,mouseY):
 def game_onKeyPress(app,key):
     if app.selectedCellX!=None:
         if key.isdigit():
-            if (app.selectedCellX,app.selectedCellY) not in app.banned and app.board[app.selectedCellX][app.selectedCellY]==0:
+            if (app.selectedCellX,app.selectedCellY) not in app.banned:
                 app.board[app.selectedCellX][app.selectedCellY]=int(key)
-                if app.board[app.selectedCellX][app.selectedCellY]!=app.solution[app.selectedCellX][app.selectedCellY]:
-                    app.wrongCells.append((app.selectedCellX,app.selectedCellY))
-                
         if key=='backspace':
             app.board[app.selectedCellX][app.selectedCellY]=0
-            if (app.selectedCellX,app.selectedCellY) in app.wrongCells:
-                app.wrongCells.remove((app.selectedCellX,app.selectedCellY))
         app.legals=resetLegals(app.board)
 
 def game_redrawAll(app):
@@ -330,9 +324,6 @@ def game_redrawAll(app):
             elif app.showLegals==True and (row,col) not in app.banned:
                 for legalVal in app.legals[(row,col)]:
                     drawLegal(app,legalVal,row,col)
-            if (row,col) in app.wrongCells:
-                drawRect(numX,numY,w,h,fill='red',opacity=25)
-
     if finishedSudoku(app.board):
         print('yay')
 
@@ -368,4 +359,4 @@ def drawLegal(app,legalVal,row,col):
         y=numY+50
     drawLabel(legalVal,x,y,size=15)
 #-------------------------------------------------------------------------------
-runAppWithScreens(initialScreen='splash',width=1000,height=700)
+runAppWithScreens(initialScreen='game',width=1000,height=700)
