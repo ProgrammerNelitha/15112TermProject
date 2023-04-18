@@ -155,9 +155,9 @@ def f(legals,board,x,y):
             oldVal=board[x][y]
             board[x][y]=val
             legals=resetLegals(board)
-            print(f'attempt {x,y,val}',board)
+            #print(f'attempt {x,y,val}',board)
             if isLegalSudoku(board):
-                print('is legal')
+                #print('is legal')
                 if finishedSudoku(board): 
                     return board
                 #update new spot
@@ -198,30 +198,43 @@ def BTcheckSudoku(list):
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 #Test Backtracker
-# def testBacktracker(filters):
-#     time0 = time.time()
-#     boardPaths = sorted(loadBoardPaths(filters))
-#     failedPaths = [ ]
-#     for boardPath in boardPaths:
-#         board = getBoard(boardPath)
-#         print(boardPath)
-#         solution = sudokuSolver(board, verbose=False)
-#         if not solution:
-#             failedPaths.append(boardPath)
-#     print()
-#     totalCount = len(boardPaths)
-#     failedCount = len(failedPaths)
-#     okCount = totalCount - failedCount
-#     time1 = time.time()
-#     if len(failedPaths) > 0:
-#         print('Failed boards:')
-#         for path in failedPaths:
-#             print(f'    {path}')
-#     percent = round(100 * okCount/totalCount)
-#     print(f'Success rate: {okCount}/{totalCount} = {percent}%')
-#     print(f'Total time: {round(time1-time0, 1)} seconds')
+def testBacktracker(app, filters):
+    time0 = time.time()
+    boardPaths = sorted(loadBoardPaths(filters))
+    failedPaths = [ ]
+    #('pahts',boardPaths)
+    for boardPath in boardPaths:
+        print('bp:',boardPath)
+        file = readFile(f"C:\\Users\\1234l\\Documents\\Documents\\CMU\\15112\\term project\\tp-starter-files\\tp-starter-files\\{boardPath}")
+        file = file.splitlines()
+        board=[]
+        for line in file:
+            rowList=[]
+            for num in line.split(' '):
+                rowList.append(int(num))
+            board.append(rowList)
+        
+        #board = getBoard(boardPath)
+        #print(boardPath,board)
+        
+        
+        solution = sudokuSolver(app,board)
+        if not solution:
+            failedPaths.append(boardPath)
+    print()
+    totalCount = len(boardPaths)
+    failedCount = len(failedPaths)
+    okCount = totalCount - failedCount
+    time1 = time.time()
+    if len(failedPaths) > 0:
+        print('Failed boards:')
+        for path in failedPaths:
+            print(f'    {path}')
+    percent = rounded(100 * okCount/totalCount)
+    print(f'Success rate: {okCount}/{totalCount} = {percent}%')
+    print(f'Total time: {(time1-time0)} seconds')
 
-# testBacktracker(filters=['easy'])
+
 #-------------------------------------------------------------------------------
 #Stuff needed for game
 def finishedSudoku(board):
@@ -276,10 +289,10 @@ def game_onAppStart(app):
             else:
                 legalSet=getLegals(app.board,row,col)
                 app.legals[(row,col)]=legalSet
-    app.solution = sudokuSolver(app,app.board)
+    #app.solution = sudokuSolver(app,app.board)
 
-    assert(finishedSudoku(app.solution))
-    print('assert pased')
+    # assert(finishedSudoku(app.solution))
+    # print('assert pased')
 
     app.boardLeft = 75
     app.boardTop = 130
@@ -291,6 +304,8 @@ def game_onAppStart(app):
     app.selectedCellY=None
 
     app.showLegals=True
+
+    testBacktracker(app,filters=['evil'])
     # app.solvedBoard=sudokuSolver(app)
 
 def game_onMousePress(app,mouseX,mouseY):
@@ -325,7 +340,8 @@ def game_redrawAll(app):
                 for legalVal in app.legals[(row,col)]:
                     drawLegal(app,legalVal,row,col)
     if finishedSudoku(app.board):
-        print('yay')
+        pass
+        #print('yay')
 
 def drawLegal(app,legalVal,row,col):
     numX, numY = getCellLeftTop(app, row,col)

@@ -3,7 +3,8 @@ import copy
 import os
 import random
 
-#Integrate difficuluties, backspace to delete entries (non-banned), check box for legals, ability to show legals for just one box, 
+#TO DO LIST
+#check box for legals, ability to show legals for just one box, 
 #display stuff for game over
 #For help page: say backspace
 #Later: ability to manually enter legals
@@ -86,7 +87,7 @@ def getLegals(board,row,col):
                     legals.add(num)
     return legals
 #-------------------------------------------------------------------------------
-#Board loading from Sudoku hints
+#Board loading slightly modified from Sudoku hints
 def getBoard(difficulty):
     path = random.choice(loadBoardPaths(difficulty))
     print('path:',path)
