@@ -4,10 +4,10 @@ import os
 import random
 
 #TO DO LIST
-#check box for legals, ability to show legals for just one box, 
-#display stuff for game over
-#For help page: say backspace
-#Later: ability to manually enter legals
+#ability to show legals for just one box 
+#ui for hints
+#Later: ability to manually enter legals, different difficulties allow different hints
+#Faster backtracker
 
 #-------------------------------------------------------------------------------
 #Code slightly modified from the Tetris Case Study Step 1
@@ -125,6 +125,7 @@ def hasFilters(filename, filters=None):
 #Splash Screen
 def onAppStart(app):
     app.difficulty=None
+    app.gameOver=False
 
 def splash_onKeyPress(app, key):
     if key == 'h': setActiveScreen('help')
@@ -141,18 +142,37 @@ def splash_onMousePress(app,mouseX,mouseY):
     if app.difficulty!=None: setActiveScreen('game')
 
 def splash_redrawAll(app):
-    drawLabel('insert splash screen, press h for instructions, and enter/click to play',app.width/2,app.height/2)
-    drawLabel(f'Chosen difficulty is: {app.difficulty}',app.width/2,app.height/2 + 100)
+    drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
+    drawLabel('SUDOKU',app.width/2,100,size=75,bold=True, fill='orange')
+    drawLabel("Press 'h' for instructions and enter/click to play!",app.width/2,185,size=20)
+    drawLabel('Press 1 for Easy Difficulty',app.width/2,250,size=20,fill='lightGreen')
+    drawLabel('Press 2 for Medium Difficulty',app.width/2,300,size=20,fill='green')
+    drawLabel('Press 3 for Hard Difficulty',app.width/2,350,size=20,fill='yellow')
+    drawLabel('Press 4 for Expert Difficulty',app.width/2,400,size=20,fill='orange')
+    drawLabel('Press 5 for Evil Difficulty',app.width/2,450,size=20,fill='red')
+    drawLabel(f'Chosen difficulty is: {app.difficulty}',app.width/2,550,size=20)
+    drawRect(app.width/2,550,300,100,fill=None,align='center',border='black')
 #-------------------------------------------------------------------------------
 #Help Screen
 def help_onKeyPress(app, key):
     if key == 'enter': setActiveScreen('splash')
 
 def help_onMousePress(app,mouseX,mouseY):
+    print(mouseX,mouseY)
     setActiveScreen('splash')
 
 def help_redrawAll(app):
-    drawLabel('instructions. press enter/click to return to splash screen',app.width/2,app.height/2)
+    drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
+
+    drawLabel('INSTRUCTIONS',app.width/2,100,size=75,bold=True, fill='orange')
+    drawLabel("Press enter or click the screen to return to the main menu",app.width/2,185,size=20)
+    drawLabel("In Sudoku you are given a 9x9 grid, which is composed of 9 'squares' (3x3).",app.width/2,250,size=20)
+    drawLabel("Each cell in the board must be filled with numbers 1-9, with each number",app.width/2,280,size=20)
+    drawLabel("being used only once in each row, column, and square",app.width/2,310,size=20)
+    
+    drawLabel("Use the mouse to select a cell, the keyboard to enter numbers, and 'backspace' to delete said numbers",app.width/2,450,size=20)
+
+    drawLabel("If you wish you may turn on Legals Mode, which displays all possible values that a cell can take on",app.width/2,550,size=20)
 #-------------------------------------------------------------------------------
 #Backtracking code modified from the Mini-Sudoku solver
 def getFewestLegals(board,legals):
@@ -292,12 +312,26 @@ def game_onScreenActivate(app):
     app.selectedCellX=None
     app.selectedCellY=None
 
-    app.showLegals=True
-    # app.solvedBoard=sudokuSolver(app)
+    app.showLegals=False
+
+    app.hint1X=None
+    app.hint1Y=None
+    app.hint1Val=None
+    app.hint1Solved=False
+    app.hint2=False
+    app.hint2Solved=False
+
+    app.gameOver=False
 
 def game_onMousePress(app,mouseX,mouseY):
     print(mouseX,mouseY)
-    app.selectedCellX,app.selectedCellY=findSelectedCell(app,mouseX,mouseY) 
+    app.selectedCellX,app.selectedCellY=findSelectedCell(app,mouseX,mouseY)
+
+    if 725<=mouseX<=915 and 180<=mouseY<=220:
+        app.showLegals=not app.showLegals
+
+    if app.gameOver:
+         setActiveScreen('splash')
 
 def game_onKeyPress(app,key):
     if app.selectedCellX!=None:
@@ -312,12 +346,30 @@ def game_onKeyPress(app,key):
             if (app.selectedCellX,app.selectedCellY) in app.wrongCells:
                 app.wrongCells.remove((app.selectedCellX,app.selectedCellY))
         app.legals=resetLegals(app.board)
+    if key=='h':
+        hintX,hintY=getFewestLegals(app.board,app.legals)
+        l=getLegals(hintX,hintY)
+        if len(l)==1:
+            app.hint1X,app.hint1Y=hintX,hintY
+            for val in l: app.hint1Val=val
+    if key == 'enter' and app.gameOver: 
+        setActiveScreen('splash')
+        
+def game_onStep(app):
+    if finishedSudoku(app.board):
+        app.gameOver=True
+        print('yay')
 
 def game_redrawAll(app):
     drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
     drawBoard(app)
     drawBoardBorder(app)
-    
+    drawRect(820,200,190,40,fill=None,border='black',align='center')
+    if app.showLegals:
+        drawLabel("Display Legals",820,200,size=25,bold=True, fill='green')
+    else:
+        drawLabel("Display Legals",820,200,size=25,bold=True, fill='red')
+
     if app.selectedCellX!=None:
         drawCell(app, app.selectedCellX, app.selectedCellY, None, 'red', app.cellBorderWidth*3)
     for row in range(app.rows):
@@ -334,8 +386,19 @@ def game_redrawAll(app):
             if (row,col) in app.wrongCells:
                 drawRect(numX,numY,w,h,fill='red',opacity=25)
 
-    if finishedSudoku(app.board):
-        print('yay')
+    if app.hint1X!=None:
+        if len(getLegals(app.board,app.hint1X,app.hint1Y))!=1:
+            app.hint1X,app.hint1Y=None,None
+        else:
+            w, h = getCellSize(app)
+            hintX,hintY = numX, numY = getCellLeftTop(app,app.hint1X,app.hint1Y)
+            drawRect(hintX,hintY,w,h,fill='blue',opacity=25)
+            drawLabel(f'Place a {app.hint1Val} at row {app.hint1X} column {app.hint1Y}', 650, 130)
+
+    if app.gameOver:
+        drawLabel("Congratulations You Win!",820,535,size=25,bold=True, fill='orange')
+        drawLabel("Press enter or click the screen",820,600,size=20)
+        drawLabel(" to return to the main menu",820,630,size=20)              
 
 def drawLegal(app,legalVal,row,col):
     numX, numY = getCellLeftTop(app, row,col)
@@ -368,5 +431,11 @@ def drawLegal(app,legalVal,row,col):
         x=numX+50
         y=numY+50
     drawLabel(legalVal,x,y,size=15)
+#-------------------------------------------------------------------------------
+def gameOver_redrawAll(app):
+    drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
+    drawLabel("Congratulations You Win!",app.width/2,app.height/2,size=75,bold=True, fill='orange')
+    drawLabel("Press enter or click the screen to return to the main menu",app.width/2,app.height/2 + 100,size=20)
+
 #-------------------------------------------------------------------------------
 runAppWithScreens(initialScreen='splash',width=1000,height=700)
