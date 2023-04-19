@@ -432,10 +432,4 @@ def drawLegal(app,legalVal,row,col):
         y=numY+50
     drawLabel(legalVal,x,y,size=15)
 #-------------------------------------------------------------------------------
-def gameOver_redrawAll(app):
-    drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
-    drawLabel("Congratulations You Win!",app.width/2,app.height/2,size=75,bold=True, fill='orange')
-    drawLabel("Press enter or click the screen to return to the main menu",app.width/2,app.height/2 + 100,size=20)
-
-#-------------------------------------------------------------------------------
 runAppWithScreens(initialScreen='splash',width=1000,height=700)
