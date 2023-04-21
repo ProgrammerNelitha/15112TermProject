@@ -2,10 +2,12 @@ from cmu_graphics import *
 import copy
 import os
 import random
+import itertools
 
 #TO DO LIST
 #ability to show legals for just one box 
 #ui for hints
+#Add comments
 #Later: ability to manually enter legals, different difficulties allow different hints
 #Faster backtracker
 
@@ -69,6 +71,21 @@ def getSquareRegion(board,row,col):
             if board[num1][num2]!=0:
                 vals.append(board[num1][num2])
     return vals
+
+def getSquareRegionCoords(row,col):
+    if row%3==0: rowsList=[row,row+1,row+2]
+    elif row%3==1: rowsList=[row-1,row,row+1]
+    elif row%3==2: rowsList=[row-2,row-1,row]
+
+    if col%3==0: colsList=[col,col+1,col+2]
+    elif col%3==1: colsList=[col-1,col,col+1]
+    elif col%3==2: colsList=[col-2,col-1,col]
+    coords=[]
+    for a in rowsList:
+        for b in colsList:
+            coords.append((a,b))
+    return coords
+
 
 def getLegals(board,row,col):
     rows,cols=len(board),len(board[0])
@@ -281,6 +298,38 @@ def resetLegals(board):
                 legalSet=getLegals(board,row,col)
                 legals[(row,col)]=legalSet
     return legals
+
+# def resetRegions(app):
+#     for i in range(app.rows):
+#         if app.board[i] not in app.regionsList: app.regionsList.append(app.board[i])
+#         for colNum in range(app.cols):
+#             colList=[]
+#             #loop through rows to get column elements
+#             for rowList in app.board:
+#                 colList.append(rowList[colNum])
+#             if colList not in app.regionsList: app.regionsList.append(colList)
+#             #Check 3x3 blocks
+#             square=getSquareRegion(app.board,i,colNum)
+#             if square not in app.regionsList: app.regionsList.append(square)
+
+def findHint2(app):
+    for N in range(2,6):
+        for region in app.regionsList:
+            for combination in itertools.combinations(region,N):
+                legalsList=[]
+                for (x,y) in combination:
+                    l=getLegals(app.board,x,y)
+                    legalsList + list(l)
+                print(combination,legalsList)
+                #We now have some number of cells. We want to check and see if 
+                #a combination of N numbers is unique across these cells
+                for vals in itertools.combinations(range(9),N):
+                    for val in vals:
+                        if legalsList.count(val)!=1: break
+                    print(combination)
+    
+
+
 #-------------------------------------------------------------------------------
 #Game Screen
 def game_onScreenActivate(app):
@@ -300,6 +349,23 @@ def game_onScreenActivate(app):
             else:
                 legalSet=getLegals(app.board,row,col)
                 app.legals[(row,col)]=legalSet
+    
+    app.regionsList=[]
+    for i in range(app.rows):
+        rowList=[]
+        for j in range(app.cols):
+            rowList.append((i,j))
+        app.regionsList.append(rowList)
+    for m in range(app.cols):
+        colList=[]
+        for k in range(app.rows):
+            colList.append((k,m))
+        app.regionsList.append(colList)
+    for a in [1,4,7]:
+        for b in [1,4,7]:
+            app.regionsList.append(getSquareRegionCoords(a,b))
+
+
     app.solution = sudokuSolver(app,app.board)
     app.wrongCells = []
 
@@ -322,6 +388,17 @@ def game_onScreenActivate(app):
     app.hint2Solved=False
 
     app.gameOver=False
+
+def game_onStep(app):
+    #resetRegions(app)
+    
+    if app.hint1X!=None and len(getLegals(app.board,app.hint1X,app.hint1Y))!=1:
+            app.hint1X,app.hint1Y=None,None
+    
+    if finishedSudoku(app.board):
+        app.gameOver=True
+        print('yay')
+
 
 def game_onMousePress(app,mouseX,mouseY):
     print(mouseX,mouseY)
@@ -346,19 +423,29 @@ def game_onKeyPress(app,key):
             if (app.selectedCellX,app.selectedCellY) in app.wrongCells:
                 app.wrongCells.remove((app.selectedCellX,app.selectedCellY))
         app.legals=resetLegals(app.board)
+    
     if key=='h':
         hintX,hintY=getFewestLegals(app.board,app.legals)
-        l=getLegals(hintX,hintY)
+        l=getLegals(app.board,hintX,hintY)
+        print(l,hintX,hintY)
         if len(l)==1:
             app.hint1X,app.hint1Y=hintX,hintY
             for val in l: app.hint1Val=val
+        else:
+            #Do hint 2
+            pass
+    if key=='k':
+        findHint2(app)
+
+    if key=='j':
+        if app.hint1X!=None:
+            app.board[app.hint1X][app.hint1Y]=app.hint1Val
+            app.legals=resetLegals(app.board)
+            
+    
     if key == 'enter' and app.gameOver: 
         setActiveScreen('splash')
         
-def game_onStep(app):
-    if finishedSudoku(app.board):
-        app.gameOver=True
-        print('yay')
 
 def game_redrawAll(app):
     drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
@@ -387,13 +474,10 @@ def game_redrawAll(app):
                 drawRect(numX,numY,w,h,fill='red',opacity=25)
 
     if app.hint1X!=None:
-        if len(getLegals(app.board,app.hint1X,app.hint1Y))!=1:
-            app.hint1X,app.hint1Y=None,None
-        else:
-            w, h = getCellSize(app)
-            hintX,hintY = numX, numY = getCellLeftTop(app,app.hint1X,app.hint1Y)
-            drawRect(hintX,hintY,w,h,fill='blue',opacity=25)
-            drawLabel(f'Place a {app.hint1Val} at row {app.hint1X} column {app.hint1Y}', 650, 130)
+        w, h = getCellSize(app)
+        hintX,hintY = numX, numY = getCellLeftTop(app,app.hint1X,app.hint1Y)
+        drawRect(hintX,hintY,w,h,fill='blue',opacity=25)
+        drawLabel(f'Place a {app.hint1Val} at row {app.hint1X} column {app.hint1Y}', 820, 120, size=25)
 
     if app.gameOver:
         drawLabel("Congratulations You Win!",820,535,size=25,bold=True, fill='orange')
