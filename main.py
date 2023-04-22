@@ -316,17 +316,32 @@ def findHint2(app):
     for N in range(2,6):
         for region in app.regionsList:
             for combination in itertools.combinations(region,N):
-                legalsList=[]
+                stopIterate=False
+                legalsSet=set()
                 for (x,y) in combination:
+                    if (x,y) in app.banned or app.board[x][y]!=0: 
+                        stopIterate=True
+                        break
                     l=getLegals(app.board,x,y)
-                    legalsList + list(l)
-                print(combination,legalsList)
+                    legalsSet = legalsSet|l
+                if stopIterate: continue
+
+                #print(combination,legalsList)
                 #We now have some number of cells. We want to check and see if 
                 #a combination of N numbers is unique across these cells
-                for vals in itertools.combinations(range(9),N):
-                    for val in vals:
-                        if legalsList.count(val)!=1: break
-                    print(combination)
+                if len(legalsSet)==N:
+                    if app.hint2Coords==[]:
+                        print(combination)
+                        app.hint2Region=region
+                        app.hint2Combo=combination
+                        app.hint2Legals=legalsSet
+                        app.hint2Coords=[]
+                        for (a,b) in region:
+                            if (a,b) not in combination and app.board[a][b]==0:
+                                app.hint2Coords.append((a,b))
+                    
+
+
     
 
 
@@ -383,17 +398,24 @@ def game_onScreenActivate(app):
     app.hint1X=None
     app.hint1Y=None
     app.hint1Val=None
-    app.hint1Solved=False
-    app.hint2=False
-    app.hint2Solved=False
+
+    app.hint2Coords=[]
+    app.hint2Region=None
+    app.hint2Combo=None
+    app.hint2Legals=None
 
     app.gameOver=False
 
 def game_onStep(app):
     #resetRegions(app)
+    app.legals=resetLegals(app.board)
     
     if app.hint1X!=None and len(getLegals(app.board,app.hint1X,app.hint1Y))!=1:
             app.hint1X,app.hint1Y=None,None
+    for (x,y) in app.hint2Coords:
+        l=getLegals(app.board,x,y)
+        if app.board[x][y]!=0 or len(l&app.hint2Legals)==0:
+            app.hint2Coords.remove((x,y))
     
     if finishedSudoku(app.board):
         app.gameOver=True
@@ -434,14 +456,23 @@ def game_onKeyPress(app,key):
         else:
             #Do hint 2
             pass
-    if key=='k':
-        findHint2(app)
-
     if key=='j':
         if app.hint1X!=None:
             app.board[app.hint1X][app.hint1Y]=app.hint1Val
             app.legals=resetLegals(app.board)
-            
+    if key=='k':
+        findHint2(app)
+    if key=='l':
+        for (a,b) in app.hint2Region:
+            if (a,b) not in app.hint2Combo:
+                if app.board[a][b]==0:                            
+                    s=app.legals[(a,b)]
+                    app.legals[(a,b)] = s-app.hint2Legals
+                    print(s,app.hint2Legals,app.legals[(a,b)])
+        app.hint2Coords=[]
+        app.hint2Region=None
+        app.hint2Combo=None
+        app.hint2Legals=None        
     
     if key == 'enter' and app.gameOver: 
         setActiveScreen('splash')
@@ -478,6 +509,11 @@ def game_redrawAll(app):
         hintX,hintY = numX, numY = getCellLeftTop(app,app.hint1X,app.hint1Y)
         drawRect(hintX,hintY,w,h,fill='blue',opacity=25)
         drawLabel(f'Place a {app.hint1Val} at row {app.hint1X} column {app.hint1Y}', 820, 120, size=25)
+    for (x,y) in app.hint2Coords:
+        x2,y2=getCellLeftTop(app,x,y)
+        drawRect(x2,y2,w,h,fill='green',opacity=25)
+    if app.hint2Coords!=[]:
+        drawLabel(f'Remove the legal values {app.hint2Legals} from these cells', 820, 120, size=15)
 
     if app.gameOver:
         drawLabel("Congratulations You Win!",820,535,size=25,bold=True, fill='orange')
