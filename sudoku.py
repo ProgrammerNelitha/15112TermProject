@@ -326,6 +326,28 @@ def getDefaultLegals(board,row,col):
                     legals.add(num)
     return legals
 
+#This should check every legal value and verify that its non problematic
+def resetLegals(app):
+    for row in range(app.rows):
+        for col in range(app.cols):
+            legalSet=app.legals.get((row,col),set())
+            
+            rowList=app.board[row]
+            colList=[]
+            for rowNum in range(app.rows):
+                colList.append(app.board[rowNum][col])
+            square=getSquareRegion(app.board,row,col)
+
+            badVals=[]
+            for val in legalSet:
+                if val in rowList: badVals.append(val)
+                elif val in colList: badVals.append(val)
+                elif val in square: badVals.append(val)
+            
+            for num in badVals:
+                app.legals[(row,col)].remove(num)
+
+
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #Game Screen
@@ -360,7 +382,13 @@ def game_onScreenActivate(app):
     
     app.solution = sudokuSolver(app,app.board)
     print('solution is:',app.solution)
-    assert(finishedSudoku(app.solution))
+
+    app.wrongCells = []
+
+def game_onStep(app):
+    if finishedSudoku(app.board):
+        app.gameOver=True
+        print('yay')
 
     
 
@@ -379,10 +407,18 @@ def game_onKeyPress(app,key):
         if key.isdigit():
             if (app.selectedCellX,app.selectedCellY) not in app.banned and app.board[app.selectedCellX][app.selectedCellY]==0:
                 app.board[app.selectedCellX][app.selectedCellY]=int(key)
-                
+                if app.board[app.selectedCellX][app.selectedCellY]!=app.solution[app.selectedCellX][app.selectedCellY]:
+                    app.wrongCells.append((app.selectedCellX,app.selectedCellY))
                 
         if key=='backspace':
             app.board[app.selectedCellX][app.selectedCellY]=0
+            if (app.selectedCellX,app.selectedCellY) in app.wrongCells:
+                app.wrongCells.remove((app.selectedCellX,app.selectedCellY))
+        resetLegals(app)     
+    
+    
+    if key == 'enter' and app.gameOver: 
+        setActiveScreen('splash')
 
 def game_redrawAll(app):
     drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
@@ -408,6 +444,9 @@ def game_redrawAll(app):
             elif app.showLegals==True and (row,col) not in app.banned:
                 for legalVal in app.legals[(row,col)]:
                     drawLegal(app,legalVal,row,col)
+            
+            if (row,col) in app.wrongCells:
+                drawRect(numX,numY,w,h,fill='red',opacity=25)
     
     if app.gameOver:
         drawLabel("Congratulations You Win!",820,535,size=25,bold=True, fill='orange')
