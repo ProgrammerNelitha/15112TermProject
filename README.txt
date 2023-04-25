@@ -1,0 +1,3 @@
+Welcome to my Sudoku Game! In this game you are able to play Sudoku at 5 levels of difficulty. A help screen is included with further instructions. You can turn on legals mode to check what values are possible. Additionally there are two hints a player can ask for. The first hint directs a player to a cell with only 1 legal value in it. The second hint directs the player to eliminate certain legal values form certain cells, based on the legal values in cells within the same region.
+
+To run the game, simply run the file "sudoku2.py". You will need the cmu_graphics package, and the folder containing all the hardcoded starting boards.
