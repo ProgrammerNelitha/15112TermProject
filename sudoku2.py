@@ -4,40 +4,11 @@ import os
 import random
 import itertools
 
-#Debug Printing Code: REMOVE LATER
-#Fix the ability to get hints after game over
-#Have the hint 1 and hint 2 message be slightly different locations
-#Add navigation from spash to help screen
-#Better code comments, check koz message
-#ability to show legals for just one box 
-#ui for hints
-#Add comments
-#Later: ability to manually enter legals, different difficulties allow different hints
-def repr2dList(L):
-    if (L == []): return '[]'
-    output = [ ]
-    rows = len(L)
-    cols = max([len(L[row]) for row in range(rows)])
-    M = [['']*cols for row in range(rows)]
-    for row in range(rows):
-        for col in range(len(L[row])):
-            M[row][col] = repr(L[row][col])
-    colWidths = [0] * cols
-    for col in range(cols):
-        colWidths[col] = max([len(M[row][col]) for row in range(rows)])
-    output.append('[\n')
-    for row in range(rows):
-        output.append(' [ ')
-        for col in range(cols):
-            if (col > 0):
-                output.append(', ' if col < len(L[row]) else '  ')
-            output.append(M[row][col].rjust(colWidths[col]))
-        output.append((' ],' if row < rows-1 else ' ]') + '\n')
-    output.append(']')
-    return ''.join(output)
 
 #-------------------------------------------------------------------------------
+#Drawing the grid
 #Code slightly modified from the Tetris Case Study Step 1
+#https://cs3-112-f22.academy.cs.cmu.edu/exercise/4962
 def drawBoard(app):
     for row in range(app.rows):
         for col in range(app.cols):
@@ -72,6 +43,7 @@ def getCellSize(app):
     return (cellWidth, cellHeight)
 #-------------------------------------------------------------------------------
 #Board loading slightly modified from Sudoku hints
+#https://www.cs.cmu.edu/afs/cs.cmu.edu/academic/class/15112-3-s23/www/notes/tp-sudoku-hints.html
 def getBoard(difficulty):
     path = random.choice(loadBoardPaths(difficulty))
     print('path:',path)
@@ -128,12 +100,13 @@ def splash_onMousePress(app,mouseX,mouseY):
 def splash_redrawAll(app):
     drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
     drawLabel('SUDOKU',app.width/2,100,size=75,bold=True, fill='orange')
+    drawRect(app.width/2,185,425,25,align='center',fill=None,border='black')
     drawLabel("Press 'h' for instructions and enter/click to play!",app.width/2,185,size=20)
-    drawLabel('Press 1 for Easy Difficulty',app.width/2,250,size=20,fill='lightGreen')
-    drawLabel('Press 2 for Medium Difficulty',app.width/2,300,size=20,fill='green')
-    drawLabel('Press 3 for Hard Difficulty',app.width/2,350,size=20,fill='yellow')
-    drawLabel('Press 4 for Expert Difficulty',app.width/2,400,size=20,fill='orange')
-    drawLabel('Press 5 for Evil Difficulty',app.width/2,450,size=20,fill='red')
+    drawLabel('Press 1 for Easy Difficulty',app.width/2,250,size=20,fill='lightGreen',border='black',borderWidth=0.3)
+    drawLabel('Press 2 for Medium Difficulty',app.width/2,300,size=20,fill='green',border='black',borderWidth=0.3)
+    drawLabel('Press 3 for Hard Difficulty',app.width/2,350,size=20,fill='yellow',border='black',borderWidth=0.3)
+    drawLabel('Press 4 for Expert Difficulty',app.width/2,400,size=20,fill='orange',border='black',borderWidth=0.3)
+    drawLabel('Press 5 for Evil Difficulty',app.width/2,450,size=20,fill='red',border='black',borderWidth=0.3)
     drawLabel(f'Chosen difficulty is: {app.difficulty}',app.width/2,550,size=20)
     drawRect(app.width/2,550,300,100,fill=None,align='center',border='black')
 #-------------------------------------------------------------------------------
@@ -147,7 +120,7 @@ def help_onMousePress(app,mouseX,mouseY):
 
 def help_redrawAll(app):
     drawRect(0,0,app.width,app.height,fill='yellow',opacity=15)
-
+    drawRect(app.width/2,185,525,25,align='center',fill=None,border='black')
     drawLabel('INSTRUCTIONS',app.width/2,100,size=75,bold=True, fill='orange')
     drawLabel("Press enter or click the screen to return to the main menu",app.width/2,185,size=20)
     drawLabel("In Sudoku you are given a 9x9 grid, which is composed of 9 'squares' (3x3).",app.width/2,250,size=20)
@@ -159,7 +132,10 @@ def help_redrawAll(app):
     drawLabel("If you wish you may turn on Legals Mode, which displays all possible values that a cell can take on",app.width/2,550,size=20)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#Backtracking code modified from the Mini-Sudoku solver
+#Backtracking code built off of and modified from the Mini-Sudoku solver
+#https://cs3-112-f22.academy.cs.cmu.edu/exercise/4823
+
+#Finds which cells on the board has the fewest legals
 def getFewestLegals(board,legals):
     rows,cols=len(board),len(board[0])
     minLegal=0
@@ -173,6 +149,7 @@ def getFewestLegals(board,legals):
                     minCoord=(i,j)
     return minCoord
 
+
 def resetDefaultLegals(board):
     rows,cols = len(board),len(board[0])
     legal=dict()
@@ -182,6 +159,7 @@ def resetDefaultLegals(board):
                 legal[(row,col)]=getDefaultLegals(board,row,col)
     return legal
 
+#Wrapper function for backtracker
 def sudokuSolver(app,board1):
     board=copy.deepcopy(board1)
     legals=app.legals.copy()
@@ -191,18 +169,12 @@ def sudokuSolver(app,board1):
 
 def f(legals,board,x,y):
     rows,cols = len(board),len(board[0])
-    #print('--------------------------------------------------------------------')
-    #print('Board:',repr2dList(board))
-    #print('Legals:',legals)
-    #print('Atempt:',(x,y))
 
     if finishedSudoku(board):
         return board
     else:
         #Try entering values 1-9
         for val in range(1,10):
-            #print('Attempting val:',val)
-
             oldVal=board[x][y]
             board[x][y]=val
             legalsTemp=resetDefaultLegals(board)
@@ -214,10 +186,8 @@ def f(legals,board,x,y):
                 for col in range(cols):
                     if (row,col)!=(x,y):
                         if board[row][col]==0 and legals[(row,col)]==set():
-                            #print('Problematic legal is:',(row,col))
                             terminate=True
             if terminate:
-                #print('Failed cuz legal trouble')
                 board[x][y]=oldVal
                 legalsTemp=resetDefaultLegals(board)
                 legals=legalsTemp.copy()
@@ -233,7 +203,6 @@ def f(legals,board,x,y):
                 newBoard=f(legals,board,a,b)
                 if newBoard!=None:
                     return newBoard
-            #print('Failed cuz not legal board')
             board[x][y]=oldVal
             legalsTemp=resetDefaultLegals(board)
             legals=legalsTemp.copy()
@@ -266,14 +235,16 @@ def BTcheckSudoku(list):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#Stuff needed for Game Screen or backtracker
+#other functions needed for Game Screen or backtracker
+
+#Return coordinates of cell the user selects
 def findSelectedCell(app,mx,my):
     for row in range(app.rows):
         for col in range(app.cols):
             x, y = getCellLeftTop(app, row, col)
             w, h = getCellSize(app)
 
-            if x-w<=mx<=x+w and y-h<=my<=y+h:
+            if x<=mx<=x+w and y<=my<=y+h:
                 return (row,col)
     return (None,None)
 
@@ -301,6 +272,7 @@ def checkSudoku(list):
         if list.count(num)!=1: return False
     return True
 
+#Extracts the values of the square (row,col) is in
 def getSquareRegion(board,row,col):
     if row%3==0: rowsList=[row,row+1,row+2]
     elif row%3==1: rowsList=[row-1,row,row+1]
@@ -317,6 +289,7 @@ def getSquareRegion(board,row,col):
                 vals.append(board[num1][num2])
     return vals
 
+#Returns the coordinates of the square (row,col) is in
 def getSquareRegionCoords(row,col):
     if row%3==0: rowsList=[row,row+1,row+2]
     elif row%3==1: rowsList=[row-1,row,row+1]
@@ -331,6 +304,8 @@ def getSquareRegionCoords(row,col):
             coords.append((a,b))
     return coords
 
+#Default legal values are all possible legal values, found by checking the legality
+#of every number from 1-9 
 def getDefaultLegals(board,row,col):
     rows,cols=len(board),len(board[0])
     legals=set()
@@ -388,10 +363,8 @@ def findHint2(app):
                         for (a,b) in region:                            
                             if (a,b) not in combination and app.board[a][b]==0:
                                 l=app.legals[(a,b)]
-                                print('leg',l,app.hint2Legals)
                                 if len(l&app.hint2Legals)!=0:
                                     app.hint2Coords.append((a,b))
-                        print('hint2Coords:',app.hint2Coords)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #Game Screen
@@ -413,7 +386,6 @@ def game_onScreenActivate(app):
     app.gameOver=False
     
     app.board=getBoard(app.difficulty)
-    print('starting board:',app.board)
     app.banned=[]
     app.bannedLegals=dict()
     app.legals=dict()
@@ -426,7 +398,6 @@ def game_onScreenActivate(app):
                 app.legals[(row,col)]=legalSet
     
     app.solution = sudokuSolver(app,app.board)
-    print('solution is:',app.solution)
 
     app.wrongCells = []
 
@@ -455,12 +426,13 @@ def game_onScreenActivate(app):
     app.hint2Legals=None
 
 def game_onStep(app):
+    #Check whether hints should be reset or if game Over
     if app.hint1X!=None and app.board[app.hint1X][app.hint1Y]!=0:
             app.hint1X,app.hint1Y=None,None
     for (x,y) in app.hint2Coords:
         if app.board[x][y]!=0:
             app.hint2Coords.remove((x,y))
-        else:#If its legals dont contain any of the hint2legals:
+        else:#If it's legals dont contain any of the hint2legals:
             removeCoord=True
             for val in app.hint2Legals:
                 if val in app.legals[(x,y)]: removeCoord=False
@@ -469,17 +441,42 @@ def game_onStep(app):
         app.hint2Region=None
         app.hint2Combo=None
         app.hint2Legals=None
+    
     if finishedSudoku(app.board):
         app.gameOver=True
-        print('yay')
 
 
 def game_onMousePress(app,mouseX,mouseY):
-    #print(mouseX,mouseY)
     app.selectedCellX,app.selectedCellY=findSelectedCell(app,mouseX,mouseY)
 
     if 725<=mouseX<=915 and 180<=mouseY<=220:
         app.showLegals=not app.showLegals
+    
+    if 67<=mouseX<=267 and 15<=mouseY<=45 and not app.gameOver:
+        hintX,hintY=getFewestLegals(app.board,app.legals)
+        l=app.legals[(hintX,hintY)]
+        if len(l)==1:
+            app.hint1X,app.hint1Y=hintX,hintY
+            for val in l: app.hint1Val=val
+    
+    if 42<=mouseX<=292 and 75<=mouseY<=105 and app.hint1X!=None:
+        if app.hint1X!=None:
+            app.board[app.hint1X][app.hint1Y]=app.hint1Val
+            resetLegals(app)
+    
+    if 362<=mouseX<=582 and 15<=mouseY<=45 and not app.gameOver:
+        if app.hint2Coords==[]:
+            findHint2(app)
+
+    if 332<=mouseX<=602 and 75<=mouseY<=105 and app.hint2Coords!=[]:
+        if app.hint2Coords!=[]:
+            #Add the hint2legal values to a banned list of legal values in those squares            
+            for (a,b) in app.hint2Coords:
+                s=app.bannedLegals.get((a,b),set())
+                for val in app.hint2Legals:
+                    s.add(val)
+                app.bannedLegals[(a,b)]=s
+            resetLegals(app)
 
     if app.gameOver:
          setActiveScreen('splash')
@@ -497,33 +494,6 @@ def game_onKeyPress(app,key):
             if (app.selectedCellX,app.selectedCellY) in app.wrongCells:
                 app.wrongCells.remove((app.selectedCellX,app.selectedCellY))
         resetLegals(app)     
-
-    if key=='h':
-        hintX,hintY=getFewestLegals(app.board,app.legals)
-        l=app.legals[(hintX,hintY)]
-        #print('fewest legals is:',(hintX,hintY),l)
-        if len(l)==1:
-            app.hint1X,app.hint1Y=hintX,hintY
-            for val in l: app.hint1Val=val
-            #print('hint 1 found:',app.hint1X,app.hint1Y,app.hint1Val)
-    if key=='j':
-        if app.hint1X!=None:
-            app.board[app.hint1X][app.hint1Y]=app.hint1Val
-            resetLegals(app)
-    if key=='k':
-        if app.hint2Coords==[]:
-            findHint2(app)
-    if key=='l':
-        if app.hint2Coords!=[]:
-            #Add the hint2legal values to a banned list of legal values in those squares            
-            for (a,b) in app.hint2Coords:
-                s=app.bannedLegals.get((a,b),set())
-                for val in app.hint2Legals:
-                    s.add(val)
-                app.bannedLegals[(a,b)]=s
-            resetLegals(app)
-            #print('banned legals',app.bannedLegals)   
-    
     
     if key == 'enter' and app.gameOver: 
         setActiveScreen('splash')
@@ -533,6 +503,18 @@ def game_redrawAll(app):
     drawBoard(app)
     drawBoardBorder(app)
     drawRect(820,200,190,40,fill=None,border='black',align='center')
+
+    drawLabel('Get Simple Hint',167,30,fill='blue',size=25)
+    drawRect(167,30,200,30,align='center',fill=None,border='black')
+    if app.hint1X!=None:
+        drawLabel('Excecute Simple Hint',167,90,fill='blue',size=25)
+        drawRect(167,90,250,30,align='center',fill=None,border='black')
+    drawLabel('Get Advanced Hint',472,30,fill='green',size=25)
+    drawRect(472,30,220,30,align='center',fill=None,border='black')
+    if app.hint2Coords!=[]:
+        drawLabel('Excecute Advanced Hint',472,90,fill='green',size=25)
+        drawRect(472,90,280,30,align='center',fill=None,border='black')
+
     if app.showLegals:
         drawLabel("Display Legals",820,200,size=25,bold=True, fill='green')
     else:
@@ -560,13 +542,13 @@ def game_redrawAll(app):
         w, h = getCellSize(app)
         hintX,hintY = numX, numY = getCellLeftTop(app,app.hint1X,app.hint1Y)
         drawRect(hintX,hintY,w,h,fill='blue',opacity=25)
-        drawLabel(f'Place a {app.hint1Val} at row {app.hint1X} column {app.hint1Y}', 820, 120, size=25)
+        drawLabel(f'Place a {app.hint1Val} at row {app.hint1X} column {app.hint1Y}', 820,30, size=25)
     
     for (x,y) in app.hint2Coords:
         x2,y2=getCellLeftTop(app,x,y)
         drawRect(x2,y2,w,h,fill='green',opacity=25)
     if app.hint2Coords!=[]:
-        drawLabel(f'Remove the legal values {app.hint2Legals} from these cells', 820, 120, size=15)
+        drawLabel(f'Remove the legal values {app.hint2Legals} from these cells', 820, 90, size=15)
     
     if app.gameOver:
         drawLabel("Congratulations, You Win!",820,535,size=25,bold=True, fill='orange')
