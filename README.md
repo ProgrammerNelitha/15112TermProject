@@ -1,2 +1,0 @@
-# 15112TermProject
-Sudoku!
