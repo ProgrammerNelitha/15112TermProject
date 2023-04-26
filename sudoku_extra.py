@@ -526,12 +526,12 @@ def game_redrawAll(app):
     drawLabel('Get Simple Hint',167,30,fill='blue',size=25)
     drawRect(167,30,200,30,align='center',fill=None,border='black')
     if app.hint1X!=None:
-        drawLabel('Excecute Simple Hint',167,90,fill='blue',size=25)
+        drawLabel('Execute Simple Hint',167,90,fill='blue',size=25)
         drawRect(167,90,250,30,align='center',fill=None,border='black')
     drawLabel('Get Advanced Hint',472,30,fill='green',size=25)
     drawRect(472,30,220,30,align='center',fill=None,border='black')
     if app.hint2Coords!=[]:
-        drawLabel('Excecute Advanced Hint',472,90,fill='green',size=25)
+        drawLabel('Execute Advanced Hint',472,90,fill='green',size=25)
         drawRect(472,90,280,30,align='center',fill=None,border='black')
 
     drawRect(820,200,190,40,fill=None,border='black',align='center')
